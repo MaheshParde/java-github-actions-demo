@@ -4,11 +4,6 @@ on:
   push:
     branches:
       - master
-<<<<<<< HEAD
-
-=======
-      
->>>>>>> a4f7532e7e50eac2c92dd339643ef3c99ca89142
 jobs:
   build-test:
     runs-on: ubuntu-latest   # GitHub-hosted runner
