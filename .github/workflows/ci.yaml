@@ -4,9 +4,7 @@ on:
   push:
     branches:
       - master
-  pull_request:
-      - master
-
+      
 jobs:
   build-test:
     runs-on: ubuntu-latest   # GitHub-hosted runner
