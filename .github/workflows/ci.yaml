@@ -4,7 +4,11 @@ on:
   push:
     branches:
       - master
+<<<<<<< HEAD
 
+=======
+      
+>>>>>>> a4f7532e7e50eac2c92dd339643ef3c99ca89142
 jobs:
   build-test:
     runs-on: ubuntu-latest   # GitHub-hosted runner
@@ -22,6 +26,12 @@ jobs:
 
       - name: Build with Maven
         run: mvn clean package
+        
+  print_the_message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print the Message
+        run: echo "this is test message"
 
   docker-stage:
     runs-on: ubuntu-latest
