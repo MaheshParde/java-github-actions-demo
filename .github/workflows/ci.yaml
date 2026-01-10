@@ -23,22 +23,32 @@ jobs:
       - name: Build JAR
         run: mvn clean package -DskipTests
 
-      - name: Docker login
+      - name: Run tests and capture logs
         run: |
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
-            -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          mvn test | tee test.log || true
 
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/java-app:latest .
+      # -------- AI ANALYSIS (QUALITY GATE) --------
 
-      - name: Push Docker image
+      - name: Create AI analyzer script
         run: |
-          docker push ${{ secrets.DOCKER_USERNAME }}/java-app:latest
+          cat <<EOF > ai_analyze.py
+          import sys
+          from transformers import pipeline
 
-      - name: Generate test logs
-        run: mvn test | tee test.logs || true
+          log_file = sys.argv[1]
+          logs = open(log_file).read()[:512]
 
-      - name: Create AI Dockerfile at runtime
+          classifier = pipeline(
+              "text-classification",
+              model="distilbert-base-uncased"
+          )
+
+          result = classifier(logs)
+          print("AI ANALYSIS RESULT:")
+          print(result)
+          EOF
+          
+      - name: Create AI Dockerfile
         run: |
           cat <<EOF > Dockerfile.ai
           FROM python:3.10-slim
@@ -48,31 +58,24 @@ jobs:
           ENTRYPOINT ["python", "ai_analyze.py"]
           EOF
 
-      - name: Create AI analyzer script
+      - name: Build & run AI container
         run: |
-          cat <<EOF > ai_analyze.py
-          from transformers import pipeline
-          import sys
-      
-          log_file = sys.argv[1]
-      
-          classifier = pipeline(
-              "text-classification",
-              model="distilbert-base-uncased"
-          )
-      
-          logs = open(log_file).read()[:512]
-          result = classifier(logs)
-      
-          print("AI ANALYSIS RESULT:")
-          print(result)
-          EOF
+          docker build -f Dockerfile.ai -t ai-analyzer .
+          docker run --rm -v "$PWD:/data" ai-analyzer /data/test.log
 
-      - name: Build AI image
-        run: docker build -f Dockerfile.ai -t ai-analyzer .
-
-      - name: Run AI container
+      - name: Remove AI artifacts
         run: |
-          docker run --rm \
-            -v "$PWD:/data" \
-            ai-analyzer /data/test.log
+          rm -f ai_analyze.py Dockerfile.ai test.log
+          docker rmi ai-analyzer || true
+
+      - name: Docker login
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login \
+            -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/java-app:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/java-app:latest          
+
+     
