@@ -72,5 +72,7 @@ jobs:
         run: docker build -f Dockerfile.ai -t ai-analyzer .
 
       - name: Run AI container
-        run: docker run --rm -v "$PWD:/data" ai-analyzer /data/test.log
-
+        run: |
+          docker run --rm \
+            -v "$PWD:/data" \
+            ai-analyzer /data/test.log
