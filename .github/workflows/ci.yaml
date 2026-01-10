@@ -38,6 +38,16 @@ jobs:
       - name: Generate test logs
         run: mvn test | tee test.logs || true
 
+      - name: Create AI Dockerfile at runtime
+        run: |
+          cat <<EOF > Dockerfile.ai
+          FROM python:3.10-slim
+          RUN pip install transformers torch --no-cache-dir
+          COPY ai_analyze.py /app/ai_analyze.py
+          WORKDIR /app
+          ENTRYPOINT ["python", "ai_analyze.py"]
+          EOF
+
       - name: Build AI image
         run: docker build -f Dockerfile.ai -t ai-analyzer .
 
