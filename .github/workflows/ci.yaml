@@ -48,6 +48,26 @@ jobs:
           ENTRYPOINT ["python", "ai_analyze.py"]
           EOF
 
+      - name: Create AI analyzer script
+        run: |
+          cat <<EOF > ai_analyze.py
+          from transformers import pipeline
+          import sys
+      
+          log_file = sys.argv[1]
+      
+          classifier = pipeline(
+              "text-classification",
+              model="distilbert-base-uncased"
+          )
+      
+          logs = open(log_file).read()[:512]
+          result = classifier(logs)
+      
+          print("AI ANALYSIS RESULT:")
+          print(result)
+          EOF
+
       - name: Build AI image
         run: docker build -f Dockerfile.ai -t ai-analyzer .
 
