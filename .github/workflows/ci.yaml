@@ -39,10 +39,10 @@ jobs:
         run: mvn test | tee test.logs || true
 
       - name: Build AI image
-        run: docker build -t Dockerfile.ai -y ai-analuzer .
+        run: docker build -t Dockerfile.ai -y ai-analyzer .
 
       - name: Run AI container
         run: |
           docker run --rm \
           -v $PWD:/data \
-         i ai-analyzer /data/test.log
+          i ai-analyzer /data/test.log
