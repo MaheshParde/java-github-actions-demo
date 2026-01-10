@@ -28,40 +28,15 @@ jobs:
           mvn test | tee test.log || true
 
       # -------- AI ANALYSIS (QUALITY GATE) --------
-
-      - name: Create AI analyzer script
+      - name: Build AI image
         run: |
-          cat <<EOF > ai_analyze.py
-          import sys
-          from transformers import pipeline
-
-          log_file = sys.argv[1]
-          logs = open(log_file).read()[:512]
-
-          classifier = pipeline(
-              "text-classification",
-              model="distilbert-base-uncased"
-          )
-
-          result = classifier(logs)
-          print("AI ANALYSIS RESULT:")
-          print(result)
-          EOF
-          
-      - name: Create AI Dockerfile
+          docker build -f ai/Dockerfile.ai -t ai-analyzer ai/
+      
+      - name: Run AI source analysis
         run: |
-          cat <<EOF > Dockerfile.ai
-          FROM python:3.10-slim
-          RUN pip install transformers torch --no-cache-dir
-          COPY ai_analyze.py /app/ai_analyze.py
-          WORKDIR /app
-          ENTRYPOINT ["python", "ai_analyze.py"]
-          EOF
-
-      - name: Build & run AI container
-        run: |
-          docker build -f Dockerfile.ai -t ai-analyzer .
-          docker run --rm -v "$PWD:/data" ai-analyzer /data/test.log
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            ai-analyzer      
 
       - name: Remove AI artifacts
         run: |
