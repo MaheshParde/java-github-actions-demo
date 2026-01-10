@@ -33,3 +33,15 @@ jobs:
         run: |
           docker push ${{ secrets.DOCKER_USERNAME }}/java-app:latest
 
+      -name: Generate test logs
+       run: mvn test | tee test.logs || true
+
+      -name: Build AI image
+      run: docker build -f Dockerfile.ai -y ai-analuzer .
+
+      -name: Run AI container
+      run: |
+        docker run --rm \
+        -v $PWD:/data \
+        ai-analyzer /data/test.log
+
